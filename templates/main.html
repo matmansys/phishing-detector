@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PhishingGuard - URL Safety Checker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      min-height: 100vh;
+      background: linear-gradient(270deg,
+       #ffff00,
+        #00ff00, #0000ff, #4b0082,
+        #8b00ff);
+      background-size: 400% 400%;
+      animation: gradientMove 50s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    nav, footer {
+      background: #f8f8f8;
+      color: #222;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    footer {
+      position: relative;
+      bottom: 0;
+      margin-top: 60px;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      border-radius: 15px 15px 0 0;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: monospace;
+      gap: 6px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #444;
+      transition: 0.3s ease;
+    }
+
+    nav a:hover {
+      color: #000;
+    }
+
+    nav .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    section {
+      padding: 60px 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .glass-box {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 20px;
+      padding: 40px 30px;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 800px;
+      text-align: center;
+      color: white;
+      text-shadow: 0 0 5px black;
+    }
+
+    #about .glass-box,
+    #services .glass-box,
+    #contact .glass-box {
+      text-align: left;
+    }
+
+    #about .glass-box p,
+    #services .glass-box p,
+    #contact .glass-box p {
+      padding-left: 10px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    .glass-box h2 {
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    .glass-box p {
+      font-size: 16px;
+    }
+
+    .checker-card input {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      background: #ffffffdd;
+      color: #000;
+    }
+
+    .checker-card button {
+      padding: 12px 24px;
+      background: #ffd700;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 0 10px #ffd700bb;
+    }
+
+    .checker-card button:hover {
+      background: #ffea00;
+      box-shadow: 0 0 15px #ffea00;
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      nav ul {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+      }
+    }
+
+    /* Popup result box */
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1);
+      background: #1e1e1e;
+      color: white;
+      padding: 25px 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4);
+      z-index: 9999;
+      text-align: center;
+      font-size: 18px;
+      display: none;
+      animation: popFade 0.3s ease-in-out;
+    }
+
+    @keyframes popFade {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .popup.safe { background-color: #1e7e34; }
+    .popup.phishing { background-color: #8b0000; }
+    .popup.warning { background-color: #ff8c00; }
+
+    .popup button {
+      margin-top: 15px;
+      background: white;
+      color: #333;
+      border: none;
+      padding: 8px 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .popup button:hover {
+      background: #ddd;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo">PhishingGuard</div>
+    <ul>
+      <li><a href="#home">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <section id="home">
+    <div class="glass-box checker-card">
+      <h2>Check a URL for Phishing</h2>
+      <input type="text" id="urlInput" placeholder="Enter a URL like http://example.com" />
+      <button onclick="checkURL()">Scan Now</button>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="glass-box">
+      <h2>About Us</h2>
+      <p>
+🔒 What is PhishingGuard?  
+* An advanced platform that detects and blocks suspicious links in real time.
+
+⚙️ How It Works  
+* Uses machine learning and an updated threat database to analyze URLs and identify cyber threats.
+
+🚨 Real-Time Protection  
+* Instantly scans links and alerts users about dangerous sites.
+
+🛡️ Why Choose PhishingGuard?  
+* Prevents identity theft, data breaches, and fraud for all users.
+
+🌐 Our Mission  
+* Create a safer web by empowering users with effective cybersecurity tools.
+      </p>
+    </div>
+  </section>
+
+  <section id="services">
+    <div class="glass-box">
+      <h2>Our Services</h2>
+      <p>
+🔍 Real-time URL Scanning  
+* Instantly analyzes links for suspicious activity.  
+* Provides proactive protection before site visits.
+
+🕵️‍♂️ Phishing Link Detection  
+* Detects fake sites mimicking trusted platforms.  
+* Uses ML to warn users of phishing threats.
+
+🧩 Secure Browser Extension (Coming Soon)  
+* Integrates with major browsers for automatic link scanning.  
+* Shows instant alerts and blocks harmful sites.
+
+💻 Developer API Integration  
+* Enables embedding URL safety checks in apps.  
+* Fast, RESTful API for seamless integration.
+
+📊 Threat Alerts & Analytics  
+* Offers detailed reports and real-time warnings.  
+* Includes dashboards to track threats and trends.
+      </p>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="glass-box">
+      <h2>Contact Us</h2>
+      <p>
+Email: alphaleaninglume.@gmail.com<br/>
+Location: Kovilpatti - 628501, Tamilnadu, India
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div>🇲‌🇦‌🇩‌🇪‌ 🇧‌🇾‌ 🇹‌🇪‌🇦‌🇲‌ 🇻‌🇪‌🇳‌🇩‌🇪‌🇹‌🇹‌🇦‌</div>
+    <div>Ⓒ 2025 PhishingGuard. All rights reserved.</div>
+  </footer>
+
+  <!-- Popup Result Box -->
+  <div id="popup" class="popup">
+    <div id="popupText">Result goes here</div>
+    <button onclick="closePopup()">OK</button>
+  </div>
+
+  <script>
+    function checkURL() {
+      const url = document.getElementById("urlInput").value;
+      const popup = document.getElementById("popup");
+      const popupText = document.getElementById("popupText");
+
+      if (!url) {
+        popupText.innerText = "⚠️ Please enter a URL.";
+        popup.className = "popup warning";
+        popup.style.display = "block";
+        return;
+      }
+
+      popupText.innerText = "🔍 Scanning...";
+      popup.className = "popup warning";
+      popup.style.display = "block";
+
+      fetch("/check_url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const resultText = data.result || "⚠️ Unknown response.";
+          popupText.innerText = resultText;
+
+          if (resultText.includes("SAFE")) {
+            popup.className = "popup safe";
+          } else if (resultText.includes("PHISHING")) {
+            popup.className = "popup phishing";
+          } else {
+            popup.className = "popup warning";
+          }
+
+          popup.style.display = "block";
+        })
+        .catch((err) => {
+          console.error(err);
+          popupText.innerText = "⚠️ Error checking URL.";
+          popup.className = "popup warning";
+          popup.style.display = "block";
+        });
+    }
+
+    function closePopup() {
+      document.getElementById("popup").style.display = "none";
+    }
+  </script>
+
+</body>
+</html>
